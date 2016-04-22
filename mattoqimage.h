@@ -8,6 +8,6 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
-QImage Mat2Qimage(cv::Mat const& src);
+QImage convertMat2Qimage(cv::Mat const& src);
 
 #endif // MATTOQIMAGE_H

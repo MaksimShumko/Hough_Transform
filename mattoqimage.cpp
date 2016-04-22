@@ -9,7 +9,9 @@
 #include "QFileDialog"
 #include "QStandardPaths"
 
-QImage Mat2Qimage(cv::Mat const& src)          //Converting from cv::Mat to QImage
+
+/////////////////////////////Converting from cv::Mat to QImage
+QImage convertMat2Qimage(cv::Mat const& src)
 {
   QImage dest(src.cols, src.rows, QImage::Format_ARGB32);
 

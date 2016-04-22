@@ -7,38 +7,47 @@
 #include<opencv2/highgui/highgui.hpp>
 #include<opencv2/imgproc/imgproc.hpp>
 
-class ProcessFrame : public QObject
+#include "houghlines.h"
+
+class ProcessFrame : public QObject, public HoughLines
 {
     Q_OBJECT
-public:
-    explicit ProcessFrame(cv::VideoCapture capWebcam1, double *_threshold1, double *_threshold2, int *_apertureSize, bool *_L2gradient,
-                          double *_rho, double *_theta, int *_threshold, double *_srn, double *_stn, double *_min_theta, double *_max_theta,
-                          QObject *parent = 0);
-    ~ProcessFrame();
 
 signals:
     void finished();
-    void error(QString err);
-    void call_showV(QPixmap& x, QPixmap& y);
+    void callShowVideo(QPixmap& x, QPixmap& y);
+
+public:
+    explicit ProcessFrame(cv::VideoCapture capWebcam1, int *index,
+                          double *threshold1, double *threshold2,
+                          int *apertureSize, bool *l2gradient,
+                          double *rho, double *theta, int *threshold,
+                          double *srn, double *stn, double *min_theta,
+                          double *max_theta,
+                          QObject *parent = 0);
+    ~ProcessFrame();
 
 public slots:
+    void startProcessFrame();
+
+private slots:
     void processFrameAndUpdateGUI();
-    void process();
 
 private:
-    cv::VideoCapture capWebcam;         // Capture object to use with webcam
+    cv::VideoCapture _capWebcam;       // Capture object to use with webcam
 
-    double threshold1;
-    double threshold2;
-    int apertureSize;
-    bool L2gradient;
-    double rho;
-    double theta;
-    int threshold;
-    double srn;
-    double stn;
-    double min_theta;
-    double max_theta;
+    int _index;
+    double _threshold1;
+    double _threshold2;
+    int _apertureSize;
+    bool _l2gradient;
+    double _rho;
+    double _theta;
+    int _threshold;
+    double _srn;
+    double _stn;
+    double _min_theta;
+    double _max_theta;
 };
 
 #endif // PROCESSFRAME_H

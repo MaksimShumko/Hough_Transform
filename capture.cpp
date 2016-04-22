@@ -10,8 +10,8 @@
 #include <vector>
 #include <iostream>
 
-#include<QtCore>
-#include<QMessageBox>
+#include <QtCore>
+#include <QMessageBox>
 #include "houghlines.h"
 #include "QElapsedTimer"
 #include <QThread>
@@ -19,92 +19,100 @@
 #include <QCloseEvent>
 
 
-capture::capture(double *threshold1, double *threshold2,
-                 int *apertureSize, bool *L2gradient,
-                 double *rho, double *theta, int *threshold,
-                 double *srn, double *stn, double *min_theta, double *max_theta,
-                 QWidget *parent) :  QWidget(parent), ui(new Ui::capture)
+Capture::Capture(QWidget *parent) :  QWidget(parent), ui(new Ui::Capture)
 {
     ui->setupUi(this);
 
-    capWebcam.open(0);                                          // associate the capture object to the default webcam
+    // Associate the capture object to the default webcam
+    _capWebcam.open(0);
 
-    if(capWebcam.isOpened() == false) {                                                     // if unsuccessful
+    // If unsuccessful
+    if(_capWebcam.isOpened() == false) {
+        // Show error message
         QMessageBox::information(this, "",
-                   "error: capWebcam not accessed successfully \n\n exiting program\n");        // show error message
-        exitProgram();                                                                        // and exit program
+                   "error: capWebcam not accessed successfully "
+                   "\n\n exiting program\n");
+        // And exit program
+        this->close();
         return;
     }
 
-    ////////////////////////////////////////////////////////////////Threads
-    qRegisterMetaType<QPixmap>("QPixmap&");
-
-    for (int i = 0; i < 4; i++)                                     //Creating 4 threads & 4 obj ProcessFrame in these threads
-    {
-        thread[i] = new QThread(this);
-        process[i] = new ProcessFrame(capWebcam, threshold1, threshold2, apertureSize, L2gradient,
-                                      rho, theta, threshold, srn, stn,
-                                      min_theta, max_theta);
-        process[i]->moveToThread(thread[i]);
-        connect(process[i], SIGNAL(error(QString)), this, SLOT(errorString(QString)));
-        connect(thread[i], SIGNAL(started()), process[i], SLOT(process()));
-        connect(process[i], SIGNAL(finished()), thread[i], SLOT(quit()));
-        connect(process[i], SIGNAL(finished()), process[i], SLOT(deleteLater()));
-        connect(thread[i], SIGNAL(finished()), thread[i], SLOT(deleteLater()));
-
-        connect(process[i], SIGNAL(call_showV(QPixmap&, QPixmap&)), this, SLOT(showV(QPixmap&, QPixmap&)));
-        thread[i]->start();
-    }
-
-    QTimer* qtimer;                                             // timer for Fps()
-    qtimer = new QTimer(this);                                   // instantiate timer
-    connect(qtimer, SIGNAL(timeout()), this, SLOT(Fps()));     // associate timer to Fps()
-    qtimer->start(1000);                                    // start timer, set to cycle every 1000 msec (1x per sec)
+    // Timer for indicateFrameRate()
+    QTimer* qtimer;
+    // Instantiate timer
+    qtimer = new QTimer(this);
+    // Associate timer to indicateFrameRate()
+    connect(qtimer, SIGNAL(timeout()), this, SLOT(indicateFrameRate()));
+    // Start timer, set to cycle every 1000 msec (1x per sec)
+    qtimer->start(1000);
 }
-capture::~capture()
+Capture::~Capture()
 {
     delete ui;
 }
 
-///////////////////////////////////////////////////Exit
-void capture::exitProgram()
+//////////////////////////////////////// Threads and Proces of Hough Transform
+void Capture::startThreadsAndTransformHough(int *index, double *threshold1,
+                                            double *threshold2, int *apertureSize,
+                                            bool *l2gradient, double *rho,
+                                            double *theta, int *threshold,
+                                            double *srn, double *stn,
+                                            double *min_theta, double *max_theta)
 {
-    this->close();                          //Exit program
+    qRegisterMetaType<QPixmap>("QPixmap&");
+
+    // Creating 4 threads & 4 obj ProcessFrame in these threads
+    for (int i = 0; i < 4; i++)
+    {
+        _thread[i] = new QThread();
+        _process[i] = new ProcessFrame(_capWebcam, index, threshold1, threshold2,
+                                       apertureSize, l2gradient, rho, theta,
+                                       threshold, srn, stn, min_theta, max_theta);
+        _process[i]->moveToThread(_thread[i]);
+        connect(_thread[i], SIGNAL(started()), _process[i], SLOT(startProcessFrame()));
+        connect(_process[i], SIGNAL(finished()), _thread[i], SLOT(quit()));
+        connect(_process[i], SIGNAL(finished()), _process[i], SLOT(deleteLater()));
+        connect(_thread[i], SIGNAL(finished()), _thread[i], SLOT(deleteLater()));
+
+        connect(_process[i], SIGNAL(callShowVideo(QPixmap&, QPixmap&)),
+                this, SLOT(showVideo(QPixmap&, QPixmap&)));
+        _thread[i]->start();
+    }
 }
 
-///////////////////////////////////////////////////Overload "close()"
-void capture::closeEvent(QCloseEvent *event)
+/////////////////////////////////////////////////// Overload "close()"
+void Capture::closeEvent(QCloseEvent *event)
 {
-    for (int i = 0; i < 4; i++)             //Delete Threads & Objects
+    emit quit();
+    for (int i = 0; i < 4; i++)             // Delete Threads & Objects
     {
-        thread[i]->deleteLater();
-        process[i]->deleteLater();
+        _process[i]->deleteLater();
     }
     event->accept();
 }
 
-////////////////////////////////////////////////////Show video
-void capture::showV(QPixmap& x, QPixmap& y)
+//////////////////////////////////////////////////// Show video
+void Capture::showVideo(QPixmap& x, QPixmap& y)
 {
-    mutex1.lock();                  //Mutex (Semaphore)
-    ui->label->setPixmap(x);        //Show Original_Video
-    mutex1.unlock();
+    _mutex1.lock();                  // Mutex (Semaphore)
+    ui->label->setPixmap(x);        // Show Original_Video
+    _mutex1.unlock();
 
-    mutex2.lock();
-    ui->label_2->setPixmap(y);      //Show Hough_Video
-    mutex2.unlock();
+    _mutex2.lock();
+    ui->label_2->setPixmap(y);      // Show Hough_Video
+    _mutex2.unlock();
 
-    mutex3.lock();                  //Frame rate
-    fps++;
-    ui->lcdNumber_2->display(fps);
-    mutex3.unlock();
+    _mutex3.lock();                  // Frame rate
+    _fps++;
+    ui->lcdNumber_2->display(_fps);
+    _mutex3.unlock();
 }
 
-////////////////////////////////////////////////////Frame rate
-void capture::Fps()
+//////////////////////////////////////////////////// Frame rate
+void Capture::indicateFrameRate()
 {
-    int x = fps - fps_x;
-    fps_x = fps;
+    int x = _fps - _fpsBuf;
+    _fpsBuf = _fps;
     x /= 1;
     ui->lcdNumber->display(x);
 }

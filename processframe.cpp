@@ -20,56 +20,89 @@
 #include <QCloseEvent>
 
 
-ProcessFrame::ProcessFrame(cv::VideoCapture capWebcam1, double *_threshold1, double *_threshold2,
-                           int *_apertureSize, bool *_L2gradient,
-                           double *_rho, double *_theta, int *_threshold,
-                           double *_srn, double *_stn, double *_min_theta, double *_max_theta,
+ProcessFrame::ProcessFrame(cv::VideoCapture capWebcam1, int *index,
+                           double *threshold1, double *threshold2,
+                           int *apertureSize, bool *l2gradient,
+                           double *rho, double *theta, int *threshold,
+                           double *srn, double *stn, double *min_theta,
+                           double *max_theta,
                            QObject *parent) : QObject(parent)
 {
-    capWebcam = capWebcam1;                                                         //Set Variables
+    // Set Variables
+    _capWebcam = capWebcam1;
 
-    threshold1 = *_threshold1;
-    threshold2 = *_threshold2;
-    apertureSize = *_apertureSize;
-    L2gradient = *_L2gradient;
-    rho = *_rho;
-    theta = *_theta;
-    threshold = *_threshold;
-    srn = *_srn;
-    stn = *_stn;
-    min_theta = *_min_theta;
-    max_theta = *_max_theta;
+    _index = *index;
+    _threshold1 = *threshold1;
+    _threshold2 = *threshold2;
+    _apertureSize = *apertureSize;
+    _l2gradient = *l2gradient;
+    _rho = *rho;
+    _theta = *theta;
+    _threshold = *threshold;
+    _srn = *srn;
+    _stn = *stn;
+    _min_theta = *min_theta;
+    _max_theta = *max_theta;
 }
-ProcessFrame::~ProcessFrame() {
-}
-
-void ProcessFrame::process()
+ProcessFrame::~ProcessFrame()
 {
-    QTimer* qtimer;                                                                // timer for processFrameAndUpdateGUI()
-    qtimer = new QTimer(this);                                                      // instantiate timer
-    connect(qtimer, SIGNAL(timeout()), this, SLOT(processFrameAndUpdateGUI()));   // associate timer to processFrameAndUpdateGUI()
-    qtimer->start();                                                                    // start timer
+
 }
 
+///////////////////////////////// Timer for processFrameAndUpdateGUI()
+void ProcessFrame::startProcessFrame()
+{
+    QTimer* qtimer;
+    // Instantiate timer
+    qtimer = new QTimer(this);
+    // Associate timer to processFrameAndUpdateGUI()
+    connect(qtimer, SIGNAL(timeout()), this, SLOT(processFrameAndUpdateGUI()));
+    // Start timer
+    qtimer->start();
+}
+
+/////////////////////////////////////////////////// Transform and send to GUI
 void ProcessFrame::processFrameAndUpdateGUI()
 {
-    cv::Mat imgOriginal, dst;                                                           // input image
+    cv::Mat imgOriginal, dst;
 
-    capWebcam.read(imgOriginal);                                                        // get next frame from the webcam
+    _capWebcam.read(imgOriginal);       // Get next frame from the webcam
 
-    if (imgOriginal.empty()) {                                                          // if we did not get a frame
-        //QMessageBox::information(capture, "", "unable to read from "
-        //                                   "webcam \n\n exiting program\n");        // show error via message box
-        emit finished();                                                                 // and exit program
-        return;
+    // Canny Edge Detector
+    cv::Canny(imgOriginal, dst, _threshold1, _threshold2,
+              _apertureSize, _l2gradient);
+
+    //Convert from OpenCV Mat to Qt QImage
+    QPixmap &qimgOriginal = QPixmap::fromImage(convertMat2Qimage(imgOriginal));
+
+    std::vector<cv::Vec2f> hough;
+    cv::Mat draw;
+    switch(_index)
+    {
+    case 0:
+        // My Hough Line Transform
+        hough = houghTransform(&dst, &_rho, &_theta,
+                               &_threshold, &_srn, &_stn,
+                               &_min_theta, &_max_theta);
+        draw = drawLines(hough);
+        showAccum();                    // Show Accumulator
+        break;
+    case 1:
+        // OpenCV Hough Line Transform
+        hough = houghTransformOpenCV(&dst, &_rho, &_theta,
+                                      &_threshold, &_srn, &_stn,
+                                      &_min_theta, &_max_theta);
+        draw = drawLinesOpenCV(hough);
+        break;
+    case 3:
+        emit finished();
+        break;
+    default:
+        emit finished();
     }
 
-    cv::Canny(imgOriginal, dst, threshold1, threshold2, apertureSize, L2gradient);  //Canny Edge Detector
+    // Convert from OpenCV Mat to Qt QImage
+    QPixmap &cdst = QPixmap::fromImage(convertMat2Qimage(draw));
 
-    QPixmap &qimgOriginal = QPixmap::fromImage(Mat2Qimage(imgOriginal));             //Convert from OpenCV Mat to Qt QImage
-    QPixmap &cdst = QPixmap::fromImage(Mat2Qimage(Hough1(&dst, &rho, &theta,        //Hough Line Transform
-                                 &threshold, &srn, &stn,
-                                 &min_theta, &max_theta)));                          //Convert from OpenCV Mat to Qt QImage
-
-    emit call_showV(qimgOriginal, cdst);
+    emit callShowVideo(qimgOriginal, cdst);        // Send images to Parent
 }

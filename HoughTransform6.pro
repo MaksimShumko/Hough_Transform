@@ -15,22 +15,23 @@ RC_FILE = mainwindow.rc
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    Canny.cpp \
     houghlines.cpp \
     mattoqimage.cpp \
     capture.cpp \
-    processframe.cpp
+    processframe.cpp \
+    canny.cpp \
+    canny.cpp
 
 HEADERS  += mainwindow.h \
-    Canny.h \
     houghlines.h \
     mattoqimage.h \
     capture.h \
-    processframe.h
+    processframe.h \
+    canny.h
 
 FORMS    += mainwindow.ui \
-    Canny.ui \
-    capture.ui
+    capture.ui \
+    canny.ui
 
 ####################################################
 
