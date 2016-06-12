@@ -132,7 +132,7 @@ void HoughLines::showAccum()
     aw = _accu_w;
     ah = _accu_h;
 
-    for (int p = 0; p<(ah*aw); p++)
+    for (int p = 0; p < (ah * aw); p++)
     {
         if ((int)accu[p] > maxa)
             maxa = accu[p];
@@ -173,8 +173,8 @@ cv::Mat HoughLines::drawLines(std::vector<cv::Vec2f> lines)
         {
             pt1.y = -1000;
             pt2.y = 1000;
-        pt1.x = ((r - _accu_h/2) - (-1000 - _img_w / 2) * sin(t)) / cos(t) + _img_w/2;
-        pt2.x = ((r - _accu_h/2) - (1000 - _img_w / 2) * sin(t)) / cos(t) + _img_w/2;
+        pt1.x = ((r - _accu_h/2) - (-1000 - _img_h / 2) * sin(t)) / cos(t) + _img_w/2;
+        pt2.x = ((r - _accu_h/2) - (1000 - _img_h / 2) * sin(t)) / cos(t) + _img_w/2;
         }
         //Drawing the lines
         cv::line(_cdst, pt1, pt2, cv::Scalar(0, 0, 255), 0.1, CV_AA);
