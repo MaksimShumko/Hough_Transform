@@ -3,7 +3,7 @@ Welcome to The Hough Line Transform Application
 This application detect straight lines on the picture or on the movie from the webcam in real time. Here used the Hough transform algorithm.
 
 
-Here is the OpenCV 3, Qt and Visual Studio 2015 Installation Tutorial on Windows 10 from Chris Dahms:
+Here is the OpenCV 3, Qt and Visual Studio 2015 Installation Tutorial on Windows 10 by Chris Dahms:
 
 https://www.youtube.com/watch?v=akAAAvGyLn0
 
