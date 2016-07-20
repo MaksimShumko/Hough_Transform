@@ -80,7 +80,7 @@ void Capture::startThreadsAndTransformHough(int *index, double *threshold1,
     }
 }
 
-/////////////////////////////////////////////////// Overload "close()"
+/////////////////////////////////////////////////// Override "close()"
 void Capture::closeEvent(QCloseEvent *event)
 {
     emit quit();

@@ -253,7 +253,7 @@ void MainWindow::on_pushButton_3_clicked()
     this->close();
 }
 
-//////////////////////////////////////////////// Overload "close()"
+//////////////////////////////////////////////// Override "close()"
 void MainWindow::closeEvent(QCloseEvent *event)
 {
     int quit = QMessageBox::information(this,
