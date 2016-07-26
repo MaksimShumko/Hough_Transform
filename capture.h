@@ -1,6 +1,8 @@
 #ifndef CAPTURE_H
 #define CAPTURE_H
 
+#include "processframe.h"
+
 #include <QWidget>
 #include <QThread>
 #include <QPixmap>
@@ -10,7 +12,6 @@
 #include<opencv2/highgui/highgui.hpp>
 #include<opencv2/imgproc/imgproc.hpp>
 
-#include "processframe.h"
 
 namespace Ui {
 class Capture;
@@ -47,7 +48,7 @@ private:
     virtual void closeEvent(QCloseEvent *event);
 
     QThread *_thread[4];
-    ProcessFrame *_process[4];
+    ProcessFrame* _process[4];
 
     QMutex _mutex1, _mutex2, _mutex3;
 

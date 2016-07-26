@@ -2,7 +2,9 @@
 #define CANNY_H
 
 #include <QWidget>
-#include "houghlines.h"
+#include "transform.h"
+#include "mytransform.h"
+#include "opencvtransform.h"
 
 #include "opencv2/imgcodecs/imgcodecs.hpp"
 #include "opencv2/highgui/highgui.hpp"
@@ -12,7 +14,7 @@ namespace Ui {
 class Canny;
 }
 
-class Canny : public QWidget, public HoughLines
+class Canny : public QWidget
 {
     Q_OBJECT
 

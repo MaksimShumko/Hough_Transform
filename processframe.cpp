@@ -1,7 +1,6 @@
 #include "processframe.h"
 
 #include "mattoqimage.h"
-#include "capture.h"
 
 #include <opencv\cv.h>
 #include <opencv2\opencv.hpp>
@@ -13,7 +12,6 @@
 
 #include <QtCore>
 #include <QMessageBox>
-#include "houghlines.h"
 #include "QElapsedTimer"
 #include <QThread>
 #include "QtConcurrent/QtConcurrentRun"
@@ -49,60 +47,53 @@ ProcessFrame::~ProcessFrame()
 
 }
 
+void ProcessFrame::stop() {
+    shouldStop = true;
+}
+
 ///////////////////////////////// Timer for processFrameAndUpdateGUI()
 void ProcessFrame::startProcessFrame()
 {
-    QTimer* qtimer;
-    // Instantiate timer
-    qtimer = new QTimer(this);
-    // Associate timer to processFrameAndUpdateGUI()
-    connect(qtimer, SIGNAL(timeout()), this, SLOT(processFrameAndUpdateGUI()));
-    // Start timer
-    qtimer->start();
+    cv::Mat imgOriginal, dst, draw;
+
+    Transform *transf;
+
+    switch(_index) {
+        case 0:
+            // My Hough Line Transform
+            transf = new MyTransform;
+            break;
+        case 1:
+            // OpenCV Hough Line Transform
+            transf = new OpenCVTransform;
+            break;
+        case 3:
+            emit finished();
+            break;
+        default:
+            emit finished();
 }
 
-/////////////////////////////////////////////////// Transform and send to GUI
-void ProcessFrame::processFrameAndUpdateGUI()
-{
-    cv::Mat imgOriginal, dst;
+    while(!shouldStop) {
+        _capWebcam.read(imgOriginal);       // Get next frame from the webcam
 
-    _capWebcam.read(imgOriginal);       // Get next frame from the webcam
+        // Canny Edge Detector
+        cv::Canny(imgOriginal, dst, _threshold1, _threshold2,
+                _apertureSize, _l2gradient);
 
-    // Canny Edge Detector
-    cv::Canny(imgOriginal, dst, _threshold1, _threshold2,
-              _apertureSize, _l2gradient);
+        //Convert from OpenCV Mat to Qt QImage
+        QPixmap &qimgOriginal = QPixmap::fromImage(convertMat2Qimage(imgOriginal));
 
-    //Convert from OpenCV Mat to Qt QImage
-    QPixmap &qimgOriginal = QPixmap::fromImage(convertMat2Qimage(imgOriginal));
+        //Hough Line Transform
+        transf->houghTransform(&dst, &_rho, &_theta,
+                                    &_threshold, &_srn, &_stn,
+                                    &_min_theta, &_max_theta);
+        draw = transf->drawLines();
+        transf->showAccum();                    // Show Accumulator
 
-    std::vector<cv::Vec2f> hough;
-    cv::Mat draw;
-    switch(_index)
-    {
-    case 0:
-        // My Hough Line Transform
-        hough = houghTransform(&dst, &_rho, &_theta,
-                               &_threshold, &_srn, &_stn,
-                               &_min_theta, &_max_theta);
-        draw = drawLines(hough);
-        showAccum();                    // Show Accumulator
-        break;
-    case 1:
-        // OpenCV Hough Line Transform
-        hough = houghTransformOpenCV(&dst, &_rho, &_theta,
-                                      &_threshold, &_srn, &_stn,
-                                      &_min_theta, &_max_theta);
-        draw = drawLinesOpenCV(hough);
-        break;
-    case 3:
-        emit finished();
-        break;
-    default:
-        emit finished();
+        // Convert from OpenCV Mat to Qt QImage
+        QPixmap &cdst = QPixmap::fromImage(convertMat2Qimage(draw));
+
+        emit callShowVideo(qimgOriginal, cdst);        // Send images to Parent
     }
-
-    // Convert from OpenCV Mat to Qt QImage
-    QPixmap &cdst = QPixmap::fromImage(convertMat2Qimage(draw));
-
-    emit callShowVideo(qimgOriginal, cdst);        // Send images to Parent
 }

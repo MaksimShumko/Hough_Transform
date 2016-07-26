@@ -15,19 +15,22 @@ RC_FILE = mainwindow.rc
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    houghlines.cpp \
     mattoqimage.cpp \
     capture.cpp \
     processframe.cpp \
     canny.cpp \
-    canny.cpp
+    canny.cpp \
+    mytransform.cpp \
+    opencvtransform.cpp
 
 HEADERS  += mainwindow.h \
-    houghlines.h \
     mattoqimage.h \
     capture.h \
     processframe.h \
-    canny.h
+    canny.h \
+    mytransform.h \
+    opencvtransform.h \
+    transform.h
 
 FORMS    += mainwindow.ui \
     capture.ui \

@@ -1,7 +1,9 @@
 #include "canny.h"
 #include "ui_canny.h"
 #include "mattoqimage.h"
-#include "houghlines.h"
+#include "transform.h"
+#include "mytransform.h"
+#include "opencvtransform.h"
 
 #include "opencv2/imgcodecs/imgcodecs.hpp"
 #include "opencv2/highgui/highgui.hpp"
@@ -40,25 +42,17 @@ Canny::Canny(int *index, QString *file, double *threshold1, double *threshold2,
     ui->label_2->setPixmap(QPixmap::fromImage(x));
 
     //////////////////////////////////////////
-    std::vector<cv::Vec2f> houghVec;
+    Transform *transf;
     cv::Mat draw;
     switch(*index)
     {
     case 0:
         // My Hough Line Transform
-        houghVec = houghTransform(&dst, rho, theta,
-                                      threshold, srn, stn,
-                                      min_theta, max_theta);
-        draw = drawLines(houghVec);
-        // Show Accumulator
-        showAccum();
+        transf = new MyTransform;
         break;
     case 1:
         // OpenCV Hough Line Transform
-        houghVec = houghTransformOpenCV(&dst, rho, theta,
-                                      threshold, srn, stn,
-                                      min_theta, max_theta);
-        draw = drawLinesOpenCV(houghVec);
+        transf = new OpenCVTransform;
         break;
     case 3:
         this->close();
@@ -66,6 +60,13 @@ Canny::Canny(int *index, QString *file, double *threshold1, double *threshold2,
     default:
         this->close();
     }
+
+    transf->houghTransform(&dst, rho, theta,
+                           threshold, srn, stn,
+                           min_theta, max_theta);
+    draw = transf->drawLines();
+    // Show Accumulator
+    transf->showAccum();
 
     QImage y = convertMat2Qimage(draw);
     ui->label_3->setPixmap(QPixmap::fromImage(y));

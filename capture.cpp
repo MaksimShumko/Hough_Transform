@@ -2,6 +2,8 @@
 #include "ui_capture.h"
 #include "mattoqimage.h"
 
+#include "processframe.h"
+
 #include <opencv\cv.h>
 #include <opencv2\opencv.hpp>
 #include <opencv2\highgui.hpp>
@@ -12,7 +14,6 @@
 
 #include <QtCore>
 #include <QMessageBox>
-#include "houghlines.h"
 #include "QElapsedTimer"
 #include <QThread>
 #include "QtConcurrent/QtConcurrentRun"
@@ -87,6 +88,7 @@ void Capture::closeEvent(QCloseEvent *event)
     for (int i = 0; i < 4; i++)             // Delete Threads & Objects
     {
         _process[i]->deleteLater();
+        _process[i]->stop();
     }
     event->accept();
 }

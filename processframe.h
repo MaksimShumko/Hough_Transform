@@ -3,13 +3,15 @@
 
 #include <QObject>
 
+#include "transform.h"
+#include "mytransform.h"
+#include "opencvtransform.h"
+
 #include<opencv2/core/core.hpp>
 #include<opencv2/highgui/highgui.hpp>
 #include<opencv2/imgproc/imgproc.hpp>
 
-#include "houghlines.h"
-
-class ProcessFrame : public QObject, public HoughLines
+class ProcessFrame : public QObject
 {
     Q_OBJECT
 
@@ -26,15 +28,15 @@ public:
                           double *max_theta,
                           QObject *parent = 0);
     ~ProcessFrame();
+    void stop();
 
 public slots:
     void startProcessFrame();
 
-private slots:
-    void processFrameAndUpdateGUI();
-
 private:
     cv::VideoCapture _capWebcam;       // Capture object to use with webcam
+
+    bool shouldStop = false;
 
     int _index;
     double _threshold1;
