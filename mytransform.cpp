@@ -1,8 +1,6 @@
-#include "houghlines.h"
-#include "canny.h"
-#include "mattoqimage.h"
-#include "mainwindow.h"
+#include "mytransform.h"
 
+#include "canny.h"
 #include "opencv2/imgcodecs/imgcodecs.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -11,26 +9,8 @@
 #include "vector"
 #include "iostream"
 
-////////////////////////////////////////////////// OpenCV Hough Transform
-std::vector<cv::Vec2f>
-HoughLines::houghTransformOpenCV(cv::Mat *dst, double *rho, double *theta,
-                                 int *threshold, double *srn, double *stn,
-                                 double *min_theta, double *max_theta)
-{
-    cv::cvtColor(*dst, _cdst, cv::COLOR_GRAY2BGR);
-
-    std::vector<cv::Vec2f> lines;
-
-    //Hough Line Transform
-    cv::HoughLines(*dst, lines, *rho, *theta,
-                   *threshold, *srn, *stn,
-                   *min_theta, *max_theta);
-    return lines;
-}
-
 ///////////////////////////////////////////////// My Hough Transform
-std::vector<cv::Vec2f>
-HoughLines::houghTransform(cv::Mat *dst, double *rho, double *theta,
+void MyTransform::houghTransform(cv::Mat *dst, double *rho, double *theta,
                            int *threshold, double *srn, double *stn,
                            double *min_theta, double *max_theta)
 {
@@ -80,7 +60,7 @@ HoughLines::houghTransform(cv::Mat *dst, double *rho, double *theta,
     cv::cvtColor(*dst, _cdst, cv::COLOR_GRAY2BGR);
     std::vector<cv::Vec2f> lines;
 
-    if (_accu == 0) return lines;
+    //if (_accu == 0) return lines;
 
     for (int r = 0; r < _accu_h; r++)
     {
@@ -119,11 +99,11 @@ HoughLines::houghTransform(cv::Mat *dst, double *rho, double *theta,
         }
     }
 
-    return lines;
+    _lines = lines;
 }
 
 ////////////////////////////////////////////////////////// Show Accumulator
-void HoughLines::showAccum()
+void MyTransform::showAccum()
 {
     //Visualize all
     int aw, ah, maxa;
@@ -155,11 +135,11 @@ void HoughLines::showAccum()
 }
 
 ////////////////////////////////////////////////// Drawing the lines
-cv::Mat HoughLines::drawLines(std::vector<cv::Vec2f> lines)
+cv::Mat MyTransform::drawLines()
 {
-    for (size_t i = 0; i < lines.size(); i++)
+    for (size_t i = 0; i < _lines.size(); i++)
     {
-        float r = lines[i][0], t = lines[i][1];
+        float r = _lines[i][0], t = _lines[i][1];
         cv::Point pt1, pt2;
 
         if (t/(CV_PI/180) >= 45 && t/(CV_PI/180) <= 135)
@@ -180,24 +160,5 @@ cv::Mat HoughLines::drawLines(std::vector<cv::Vec2f> lines)
         cv::line(_cdst, pt1, pt2, cv::Scalar(0, 0, 255), 0.1, CV_AA);
     }
 
-    return _cdst;
-}
-
-//////////////////////////////////////////////////// Drawing the lines
-cv::Mat HoughLines::drawLinesOpenCV(std::vector<cv::Vec2f> lines)
-{
-    for (size_t i = 0; i < lines.size(); i++)
-    {
-        float rho = lines[i][0], theta1 = lines[i][1];
-        cv::Point pt1, pt2;
-        double a = cos(theta1), b = sin(theta1);
-        double x0 = a*rho, y0 = b*rho;
-        pt1.x = cvRound(x0 + 1000 * (-b));
-        pt1.y = cvRound(y0 + 1000 * (a));
-        pt2.x = cvRound(x0 - 1000 * (-b));
-        pt2.y = cvRound(y0 - 1000 * (a));
-        //Drawing the lines
-        cv::line(_cdst, pt1, pt2, cv::Scalar(0, 0, 255), 0.1, CV_AA);
-    }
     return _cdst;
 }
